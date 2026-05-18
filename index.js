@@ -1,8 +1,25 @@
+require("dotenv").config();
+const cookieParser = require("cookie-parser");
 const express = require('express');
+
 const app = express();
+
+const connectDB = require("./conect");
+const authRoutes = require("./routes/auth");
+
+connectDB();
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.set("view engine", "ejs");
+app.use("/", authRoutes);
+
+const protect = require("./middleware/auth");
+
 const path = require('path');
 const shortid = require('shortid');
 const services = require('./services.config');
+const User = require('./model/user');
 
 const port = 3000;
 const urlRoutes = require('./routes/url');
@@ -31,6 +48,38 @@ function buildShortenerViewModel(req, shortId = null, error = null) {
     };
 }
 
+function buildAccountViewModel(userDoc, fallbackUser) {
+    const name = userDoc?.name || 'Creator';
+    const initials = name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join('') || 'CR';
+
+    return {
+        id: fallbackUser.id,
+        name,
+        email: userDoc?.email || '',
+        initials,
+    };
+}
+
+app.get("/dashboard", protect, async (req, res) => {
+    const userDoc = await User.findById(req.user.id).select('name email').lean();
+
+    res.render("dashboard", {
+        user: buildAccountViewModel(userDoc, req.user),
+        services,
+    });
+});
+
+app.get("/profile", protect, async (req, res) => {
+    const userDoc = await User.findById(req.user.id).select('name email').lean();
+
+    res.render("profile", { user: buildAccountViewModel(userDoc, req.user) });
+});
+
 // Service hub landing page
 app.get('/', (req, res) => {
     res.render('services-hub', { services });
@@ -41,8 +90,8 @@ app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
-// Service pages
-app.get('/services/:serviceKey', (req, res) => {
+// Protected service pages
+app.get('/services/:serviceKey', protect, (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
     if (!service) {
@@ -67,7 +116,7 @@ app.get('/services/:serviceKey', (req, res) => {
 });
 
 // URL shortener submit flow (dedicated service route)
-app.post('/services/url-shortener/shorten', async (req, res) => {
+app.post('/services/url-shortener/shorten', protect, async (req, res) => {
     const { redirectUrl } = req.body;
     if (!redirectUrl) {
         return res.render('home', buildShortenerViewModel(req, null, 'Please enter a URL.'));
