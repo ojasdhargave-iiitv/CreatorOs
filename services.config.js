@@ -41,4 +41,11 @@ module.exports = [
         route: '/services/content-os',
         status: 'coming_soon',
     },
+    {
+    key: 'suggestion-tool',
+    name: '🎨 Caption & Hashtag Tool',
+    description: 'Get captions, hashtags and song suggestions based on your content type.',
+    status: 'available',
+    route: '/services/suggestion-tool'
+}
 ];

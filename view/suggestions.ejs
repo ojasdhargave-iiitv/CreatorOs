@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Caption & Hashtag Tool | CreatorOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06101f;
+      --bg-2: #0b1730;
+      --surface: rgba(13, 24, 49, 0.72);
+      --surface-strong: rgba(8, 19, 39, 0.92);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --muted-2: #94a3b8;
+      --accent: #22d3ee;
+      --accent-2: #38bdf8;
+      --purple: #22d3ee;
+      --purple-2: #38bdf8;
+      --purple-3: #67e8f9;
+      --green: #22c55e;
+      --shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
+        radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ── */
+    .dashboard-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      transition: grid-template-columns 0.28s ease;
+    }
+
+    .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+      padding: 1.65rem 0.9rem;
+      border-right: 1px solid var(--border);
+      background: rgba(6, 16, 31, 0.82);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+      transition: max-height 0.28s ease, padding 0.28s ease;
+      animation: slideIn 0.65s ease both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 0.55rem 1.2rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.8rem;
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--purple-2), var(--purple));
+      box-shadow: 0 12px 30px rgba(34, 211, 238, 0.24);
+      flex: 0 0 auto;
+    }
+
+    .sidebar-section { display: grid; gap: 0.45rem; }
+
+    .sidebar-label {
+      margin: 0 0.55rem 0.25rem;
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-link, .service-link {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-height: 3.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 0.65rem;
+      color: var(--muted);
+      font-weight: 600;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .nav-link:hover, .service-link:hover {
+      transform: translateX(4px);
+      color: #67e8f9;
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .nav-link.active {
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--purple-2), var(--purple));
+      box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+    }
+
+    .service-link.available { color: #67e8f9; background: rgba(34, 211, 238, 0.08); }
+
+    .nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+    .service-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .sidebar-footer { margin-top: auto; display: grid; gap: 0.65rem; }
+
+    .dashboard-layout.sidebar-collapsed .brand { justify-content: center; padding-inline: 0; }
+    .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark),
+    .dashboard-layout.sidebar-collapsed .sidebar-label,
+    .dashboard-layout.sidebar-collapsed .service-name { display: none; }
+    .dashboard-layout.sidebar-collapsed .nav-link,
+    .dashboard-layout.sidebar-collapsed .service-link {
+      justify-content: center; gap: 0; padding-inline: 0.8rem; font-size: 0;
+    }
+
+    /* ── Main ── */
+    .main { min-width: 0; animation: fadeIn 0.65s ease 0.1s both; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 82px;
+      padding: 1rem 2.4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 16, 31, 0.76);
+      backdrop-filter: blur(18px);
+    }
+
+    .menu-btn, .icon-btn {
+      width: 2.55rem;
+      height: 2.55rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .menu-btn:hover, .icon-btn:hover {
+      transform: translateY(-2px);
+      color: #67e8f9;
+      border-color: rgba(103, 232, 249, 0.34);
+      background: rgba(34, 211, 238, 0.1);
+    }
+
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .profile-chip:hover { transform: translateY(-2px); background: rgba(34, 211, 238, 0.1); }
+
+    .avatar {
+      width: 2.4rem;
+      height: 2.4rem;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #042f3e;
+      background: linear-gradient(135deg, #67e8f9, var(--accent-2));
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .profile-name { font-weight: 700; }
+
+    /* ── Content ── */
+    .content { padding: 2.2rem 2.4rem 2.8rem; }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.9rem;
+    }
+
+    .page-head h1 {
+      margin: 0 0 0.25rem;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      line-height: 1.08;
+    }
+
+    .page-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+
+    /* ── Form ── */
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .styled-select {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.9rem 1.2rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      backdrop-filter: blur(18px);
+      cursor: pointer;
+      transition: border-color 0.18s ease;
+      appearance: none;
+    }
+
+    .styled-select:focus {
+      outline: none;
+      border-color: rgba(34, 211, 238, 0.5);
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.9rem 1.8rem;
+      border: none;
+      border-radius: 0.65rem;
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(34, 211, 238, 0.28);
+    }
+
+    /* ── Result panels ── */
+    .results-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 0.9rem;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      animation: enterUp 0.55s ease both;
+    }
+
+    .panel:nth-child(2) { animation-delay: 0.07s; }
+    .panel:nth-child(3) { animation-delay: 0.14s; }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--purple-3);
+    }
+
+    /* ── Caption cards ── */
+    .caption-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.75rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .caption-card:last-child { margin-bottom: 0; }
+
+    .caption-card:hover {
+      border-color: rgba(34, 211, 238, 0.28);
+      background: rgba(34, 211, 238, 0.04);
+    }
+
+    .caption-text { color: var(--muted); font-size: 0.97rem; font-weight: 500; }
+
+    /* ── Hashtags ── */
+    .hashtag-wrap { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; }
+
+    .tag {
+      background: rgba(34, 211, 238, 0.1);
+      color: var(--purple-3);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .tag:hover {
+      background: rgba(34, 211, 238, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* ── Song cards ── */
+    .song-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.2rem;
+      margin-bottom: 0.75rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .song-card:last-child { margin-bottom: 0; }
+
+    .song-card:hover {
+      border-color: rgba(34, 211, 238, 0.28);
+      background: rgba(34, 211, 238, 0.04);
+    }
+
+    .song-title { color: var(--muted); font-size: 0.97rem; font-weight: 500; }
+
+    .mood-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--purple-3);
+      background: rgba(34, 211, 238, 0.1);
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      white-space: nowrap;
+    }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.45rem;
+      border: 1px solid var(--border);
+      color: var(--muted-2);
+      background: rgba(255, 255, 255, 0.04);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .copy-btn:hover {
+      color: var(--purple-3);
+      border-color: rgba(34, 211, 238, 0.4);
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .copy-all-row {
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 4rem 2rem;
+      border: 1px dashed var(--border);
+      border-radius: 0.9rem;
+      color: var(--muted-2);
+      text-align: center;
+    }
+
+    .empty-state svg { width: 3rem; height: 3rem; opacity: 0.4; }
+    .empty-state p { font-size: 1rem; font-weight: 500; }
+
+    svg { width: 1.2rem; height: 1.2rem; stroke-width: 2.2; }
+
+    /* ── Animations ── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-18px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes enterUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 860px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      .content { padding: 1.4rem 1rem 2rem; }
+      .topbar { padding: 1rem; }
+    }
+
+    @media (max-width: 560px) {
+      .form-row { flex-direction: column; }
+      .profile-name { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout" id="dashboardLayout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Dashboard navigation">
+      <a class="brand" href="/dashboard">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.2 4.73"></path>
+            <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.63-1.63"></path>
+          </svg>
+        </span>
+        <span>CREATOROS</span>
+      </a>
+
+      <nav class="sidebar-section">
+        <p class="sidebar-label">Workspace</p>
+        <a class="nav-link" href="/dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Dashboard
+        </a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>My Links</a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>Analytics</a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>Settings</a>
+      </nav>
+
+      <nav class="sidebar-section" aria-label="Services">
+        <p class="sidebar-label">Services</p>
+        <% services.forEach(function(service) { %>
+          <a class="service-link <%= service.status %> <%= service.key === 'suggestion-tool' ? 'active' : '' %>"
+             href="<%= service.route %>" title="<%= service.name %>">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 3v18"></path><path d="M3 12h18"></path>
+            </svg>
+            <span class="service-name"><%= service.name %></span>
+          </a>
+        <% }) %>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-link" href="/logout">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>
+          </svg>
+          Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" type="button" id="sidebarToggle" aria-label="Toggle sidebar" aria-expanded="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>
+          </svg>
+        </button>
+        <div class="topbar-actions">
+          <a class="profile-chip" href="/profile">
+            <span class="avatar">CR</span>
+            <span class="profile-name">Creator</span>
+          </a>
+          <a class="icon-btn" href="/logout" aria-label="Logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>
+            </svg>
+          </a>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="page-head">
+          <div>
+            <h1>🎨 Caption & Hashtag Tool</h1>
+            <p>Select your content type to get captions, hashtags & song ideas instantly.</p>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="/suggestions">
+          <div class="form-row">
+            <select class="styled-select" name="category" required>
+              <option value="" disabled <%= !selected ? 'selected' : '' %>>-- Choose a content category --</option>
+              <% categories.forEach(function(cat) { %>
+                <option value="<%= cat %>" <%= selected === cat ? 'selected' : '' %>>
+                  <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+                </option>
+              <% }) %>
+            </select>
+            <button class="primary-btn" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+              </svg>
+              Get Suggestions
+            </button>
+          </div>
+        </form>
+
+        <!-- Results -->
+        <% if (result) { %>
+          <div class="results-grid">
+
+            <!-- Captions -->
+            <div class="panel">
+              <div class="panel-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#67e8f9" style="width:1.3rem;height:1.3rem">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                </svg>
+                <h2>Caption Suggestions</h2>
+              </div>
+              <% result.captions.forEach(function(caption) { %>
+                <div class="caption-card">
+                  <span class="caption-text"><%= caption %></span>
+                  <button class="copy-btn" data-text="<%= caption %>">Copy</button>
+                </div>
+              <% }) %>
+            </div>
+
+            <!-- Hashtags -->
+            <div class="panel">
+              <div class="panel-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#67e8f9" style="width:1.3rem;height:1.3rem">
+                  <path d="M4 9h16"></path><path d="M4 15h16"></path>
+                  <path d="M10 3 8 21"></path><path d="M16 3l-2 18"></path>
+                </svg>
+                <h2>Hashtag Recommendations</h2>
+              </div>
+              <div class="hashtag-wrap">
+                <% result.hashtags.forEach(function(tag) { %>
+                  <span class="tag" data-text="<%= tag %>"><%= tag %></span>
+                <% }) %>
+              </div>
+              <div class="copy-all-row">
+                <button class="copy-btn" data-text="<%= result.hashtags.join(' ') %>">Copy All Hashtags</button>
+              </div>
+            </div>
+
+            <!-- Songs -->
+            <div class="panel">
+              <div class="panel-head">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#67e8f9" style="width:1.3rem;height:1.3rem">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <h2>Song Suggestions</h2>
+              </div>
+              <% result.songs.forEach(function(song) { %>
+                <div class="song-card">
+                  <span class="song-title"><%= song.title %></span>
+                  <span class="mood-badge"><%= song.mood %></span>
+                </div>
+              <% }) %>
+            </div>
+
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v4"></path><path d="M12 16h.01"></path>
+            </svg>
+            <p>Select a category above and click <strong>Get Suggestions</strong> to begin.</p>
+          </div>
+        <% } %>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Sidebar toggle
+    var layout = document.getElementById('dashboardLayout');
+    var toggle = document.getElementById('sidebarToggle');
+    if (localStorage.getItem('creatorosSidebarCollapsed') === 'true') {
+      layout.classList.add('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function() {
+      var collapsed = layout.classList.toggle('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      localStorage.setItem('creatorosSidebarCollapsed', String(collapsed));
+    });
+
+    // Copy buttons
+    document.querySelectorAll('.copy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(btn.getAttribute('data-text')).then(function() {
+          var orig = btn.textContent;
+          btn.textContent = '✓ Copied!';
+          btn.style.color = '#22c55e';
+          btn.style.borderColor = '#22c55e';
+          setTimeout(function() {
+            btn.textContent = orig;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+          }, 2000);
+        });
+      });
+    });
+
+    // Clickable hashtag tags
+    document.querySelectorAll('.tag').forEach(function(tag) {
+      tag.addEventListener('click', function() {
+        navigator.clipboard.writeText(tag.getAttribute('data-text')).then(function() {
+          var orig = tag.textContent;
+          tag.textContent = '✓ copied';
+          setTimeout(function() { tag.textContent = orig; }, 1500);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
