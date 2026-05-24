@@ -154,9 +154,77 @@
             transition: transform 0.2s ease, filter 0.2s ease;
         }
 
+        .google-login {
+            width: 100%;
+            min-height: 3.35rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(248, 250, 252, 0.22);
+            border-radius: 999px;
+            padding: 0.95rem 1.2rem;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 14px 30px rgba(2, 6, 23, 0.18);
+            font: inherit;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .google-login:hover {
+            transform: translateY(-2px);
+            border-color: rgba(248, 250, 252, 0.42);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .google-icon {
+            flex: 0 0 auto;
+            width: 1.2rem;
+            height: 1.2rem;
+            border-radius: 50%;
+            background: #ffffff;
+        }
+
+        .divider {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0 0 1rem;
+            color: rgba(203, 213, 225, 0.78);
+            font-size: 0.86rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            height: 1px;
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        .auth-error {
+            margin: 0 0 1rem;
+            border: 1px solid rgba(248, 113, 113, 0.38);
+            border-radius: 1rem;
+            padding: 0.85rem 1rem;
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.22);
+            line-height: 1.5;
+        }
+
         button:hover {
             transform: translateY(-2px);
             filter: brightness(1.03);
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.75;
+            transform: none;
         }
 
         .switch-link {
@@ -187,10 +255,30 @@
             <h1>Welcome back</h1>
             <p class="subtitle">Log in to continue managing your creator tools and shortened links.</p>
 
-            <form action="/login" method="POST">
+            <% if (error) { %>
+                <p class="auth-error" role="alert"><%= error %></p>
+            <% } %>
+
+            <a
+                class="google-login"
+                href="/auth/google"
+                data-loading-text="Connecting..."
+            >
+                <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
+                    <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
+                    <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
+                </svg>
+                <span>Continue with Google</span>
+            </a>
+
+            <div class="divider">or</div>
+
+            <form action="/login" method="POST" id="email-login-form">
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
-                <button type="submit">Login</button>
+                <button type="submit" data-loading-text="Logging in...">Login</button>
             </form>
 
             <p class="switch-link">
@@ -199,5 +287,23 @@
             </p>
         </section>
     </main>
+    <script>
+        const googleLogin = document.querySelector('.google-login');
+        const emailForm = document.querySelector('#email-login-form');
+
+        googleLogin?.addEventListener('click', function () {
+            this.setAttribute('aria-busy', 'true');
+            this.querySelector('span').textContent = this.dataset.loadingText;
+        });
+
+        emailForm?.addEventListener('submit', function () {
+            const submitButton = this.querySelector('button[type="submit"]');
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = submitButton.dataset.loadingText;
+            }
+        });
+    </script>
 </body>
 </html>

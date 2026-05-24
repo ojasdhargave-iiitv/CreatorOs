@@ -1,16 +1,18 @@
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const express = require('express');
+const passport = require("passport");
 
 const app = express();
 
 const connectDB = require("./conect");
 const authRoutes = require("./routes/auth");
 
-connectDB();
+const dbConnection = connectDB();
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.use("/", authRoutes);
 
@@ -23,7 +25,7 @@ const multer = require('multer');
 const services = require('./services.config');
 const User = require('./model/user');
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 
 const suggestionRoutes = require('./routes/suggestionRoutes');
@@ -190,8 +192,12 @@ app.get('/u/:shortId', async (req, res) => {
     }
 });
 
-// app.listen(port, () => {
-//     console.log(`Server is running on http://localhost:${port}`);
-// });
+if (require.main === module) {
+    dbConnection.then(() => {
+        app.listen(port, () => {
+            console.log(`Server is running on http://localhost:${port}`);
+        });
+    });
+}
 
 module.exports = app;

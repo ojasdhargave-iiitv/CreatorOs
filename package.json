@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,6 +25,8 @@
     "multer": "^1.4.5-lts.1",
     "nanoid": "^5.1.6",
     "nodemon": "^3.1.10",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "shortid": "^2.2.17"
   }
 }
