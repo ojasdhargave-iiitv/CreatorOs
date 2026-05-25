@@ -742,35 +742,45 @@
             .sidebar {
                 position: relative;
                 height: auto;
-                max-height: 360px;
-                overflow-y: auto;
+                max-height: 1200px;
                 border-right: 0;
                 border-bottom: 1px solid var(--border);
             }
 
             .dashboard-layout.sidebar-collapsed .sidebar {
-                max-height: 88px;
-                padding-bottom: 0.75rem;
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                border-bottom-color: transparent;
             }
 
-            .dashboard-layout.sidebar-collapsed .sidebar > *:not(.brand) {
-                display: none;
-            }
-
-            .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark) {
-                display: inline;
+            .dashboard-layout.sidebar-collapsed .sidebar > * {
+                opacity: 0;
+                pointer-events: none;
             }
 
             .dashboard-layout.sidebar-collapsed .nav-link,
             .dashboard-layout.sidebar-collapsed .service-link {
-                justify-content: flex-start;
-                gap: 0.85rem;
                 font-size: inherit;
             }
 
-            .topbar,
+            .sidebar-section {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+
+            .sidebar-label,
+            .brand {
+                grid-column: 1 / -1;
+            }
+
+            .topbar {
+                position: relative;
+                padding: 1rem;
+            }
+
             .content {
-                padding-inline: 1rem;
+                width: 100%;
+                padding: 1.4rem 1rem 2rem;
             }
 
             .dashboard-head {
@@ -804,6 +814,10 @@
                 width: 100%;
             }
 
+            .dashboard-head h1 {
+                font-size: 2.25rem;
+            }
+
             .profile-top {
                 flex-direction: column;
             }
@@ -819,6 +833,44 @@
             .metric-card,
             .post-card {
                 border-radius: 1rem;
+            }
+
+            .chart-shell {
+                min-height: 260px;
+            }
+
+            .chart-shell.small {
+                min-height: 220px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .topbar {
+                gap: 0.75rem;
+            }
+
+            .topbar-actions {
+                gap: 0.5rem;
+            }
+
+            .content {
+                padding-inline: 0.85rem;
+            }
+
+            .dashboard-head h1 {
+                font-size: 1.95rem;
+            }
+
+            .panel,
+            .metric-card,
+            .post-card,
+            .empty-state {
+                padding: 1rem;
+            }
+
+            .profile-stats,
+            .post-stats {
+                gap: 0.55rem;
             }
         }
     </style>
