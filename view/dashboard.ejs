@@ -405,6 +405,96 @@
             letter-spacing: 0;
         }
 
+        .invite-panel p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .invite-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .invite-form input {
+            min-width: 0;
+            padding: 1rem 1.1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.85rem;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font: inherit;
+        }
+
+        .invite-form button {
+            border: none;
+            color: #042f3e;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+            border-radius: 0.85rem;
+            padding: 1rem 1.35rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .invite-form button:hover {
+            transform: translateY(-1px);
+        }
+
+        .message-box {
+            padding: 1rem 1.15rem;
+            border-radius: 0.95rem;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .message-success {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.18);
+            color: #d1fae5;
+        }
+
+        .message-error {
+            background: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.22);
+            color: #fee2e2;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .status-card {
+            padding: 1rem 1.1rem;
+            border-radius: 0.95rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            color: var(--text);
+        }
+
+        .status-card h3 {
+            margin: 0 0 0.45rem;
+            font-size: 0.96rem;
+            color: var(--muted);
+        }
+
+        .status-card p {
+            margin: 0;
+            font-size: 1.66rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .status-card.pending { color: #facc15; }
+        .status-card.accepted { color: #22c55e; }
+        .status-card.expired { color: #f87171; }
+
         .select-pill {
             border: 1px solid var(--border);
             border-radius: 0.55rem;
@@ -867,6 +957,27 @@
                     </article>
                 </div>
 
+                <section class="panel">
+                    <div class="panel-head">
+                        <h2>Invite Status</h2>
+                        <span class="badge">Team invites</span>
+                    </div>
+                    <div class="status-grid">
+                        <div class="status-card pending">
+                            <h3>Pending</h3>
+                            <p><%= inviteSummary ? inviteSummary.pending : 0 %></p>
+                        </div>
+                        <div class="status-card accepted">
+                            <h3>Accepted</h3>
+                            <p><%= inviteSummary ? inviteSummary.accepted : 0 %></p>
+                        </div>
+                        <div class="status-card expired">
+                            <h3>Expired</h3>
+                            <p><%= inviteSummary ? inviteSummary.expired : 0 %></p>
+                        </div>
+                    </div>
+                </section>
+
                 <div class="analytics-grid">
                     <section class="panel">
                         <div class="panel-head">
@@ -908,6 +1019,24 @@
                                 <text class="chart-label" x="672" y="270">24 May</text>
                             </svg>
                         </div>
+                    </section>
+
+                    <section class="panel invite-panel">
+                        <div class="panel-head">
+                            <h2>Accept an invitation</h2>
+                            <span style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 0.85rem; border-radius:999px; background: rgba(34,211,238,0.12); color:#67e8f9; font-weight:700; font-size:0.85rem;">Team</span>
+                        </div>
+                        <p>Have an invite token? Paste it below to accept your collaboration invite into CreatorOS.</p>
+                        <% if (inviteAcceptMessage) { %>
+                            <div class="message-box message-success"><%= inviteAcceptMessage %></div>
+                        <% } %>
+                        <% if (inviteAcceptError) { %>
+                            <div class="message-box message-error"><%= inviteAcceptError %></div>
+                        <% } %>
+                        <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+                            <input type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
+                            <button type="submit">Accept invite</button>
+                        </form>
                     </section>
 
                     <section class="panel">

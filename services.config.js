@@ -37,9 +37,9 @@ module.exports = [
     {
         key: 'creator-crm',
         name: '🤝 Creator CRM',
-        description: 'Manage brand deals, contacts, and campaign status in one place.',
+        description: 'Invite collaborators, manage team access, and view pending invitations.',
         route: '/services/creator-crm',
-        status: 'coming_soon',
+        status: 'available',
     },
     {
         key: 'content-os',

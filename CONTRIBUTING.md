@@ -54,11 +54,11 @@ Thank you for wanting to contribute to CreatorOS! We're excited to have you help
 npm install
 
 # Setup environment
-cp .env.example .env
-# Edit .env with your settings
+cp .env.example .env.local
+# Edit .env.local with your settings
 
 # Start development server
-npm start
+npm run dev
 ```
 
 ### Running Tests

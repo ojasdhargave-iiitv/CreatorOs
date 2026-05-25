@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accept Invitation | CreatorOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg, #0b1220, #06101f);
+      color: #f8fafc;
+      padding: 1rem;
+    }
+    .card {
+      width: min(640px, 100%);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      background: rgba(13, 24, 49, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    }
+    h1 { margin-top: 0; font-size: clamp(2rem, 2.8vw, 2.8rem); }
+    p { color: #cbd5e1; line-height: 1.75; }
+    .status { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 999px; margin: 1rem 0; }
+    .status-accepted { background: rgba(34, 197, 94, 0.16); color: #dcfce7; }
+    .status-missing { background: rgba(248, 113, 113, 0.16); color: #fecaca; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.95rem 1.35rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #67e8f9, #22d3ee);
+      color: #042f3e;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <% if (status === 'accepted') { %>
+      <div class="status status-accepted">Invitation accepted</div>
+      <h1>Welcome aboard</h1>
+      <p>You have successfully accepted the collaboration invite for <strong><%= invite.projectName %></strong>. If you already have an account, please log in and continue.</p>
+      <a class="button" href="/login">Go to login</a>
+    <% } else { %>
+      <div class="status status-missing">Invitation not found</div>
+      <h1>Invite expired or invalid</h1>
+      <p>The invitation link is no longer valid. Ask your collaborator to resend the invite from CreatorOS.</p>
+      <a class="button" href="/">Return home</a>
+    <% } %>
+  </div>
+</body>
+</html>

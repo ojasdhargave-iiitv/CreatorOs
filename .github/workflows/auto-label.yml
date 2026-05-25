@@ -22,7 +22,7 @@ jobs:
         run: npm install @octokit/rest
 
       - name: Run auto-label automation
-        run: node scripts/auto-label.js
+        run: node .github/scripts/auto-label.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
