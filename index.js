@@ -107,6 +107,53 @@ function buildAccountViewModel(userDoc, fallbackUser) {
     };
 }
 
+function buildAnalyticsViewModel() {
+    return {
+        isLoading: false,
+        isEmpty: false,
+        selectedRange: 'Last 30 days',
+        lastUpdated: '25 May 2026, 5:30 PM',
+        profile: {
+            name: 'Aarav Studio',
+            handle: '@aaravstudio',
+            category: 'Digital creator',
+            bio: 'Short-form creator sharing design systems, creator workflows, and behind-the-scenes builds.',
+            avatarInitials: 'AS',
+            followers: '128.4K',
+            following: '642',
+            totalPosts: '318',
+            growthLabel: '+8.6%',
+        },
+        metrics: [
+            { label: 'Followers', value: '128.4K', change: '+8.6%', tone: 'cyan' },
+            { label: 'Engagement rate', value: '6.82%', change: '+1.2%', tone: 'green' },
+            { label: 'Avg. likes', value: '8.7K', change: '+940', tone: 'blue' },
+            { label: 'Avg. comments', value: '412', change: '+38', tone: 'orange' },
+            { label: 'Posting frequency', value: '5.4/wk', change: 'Consistent', tone: 'violet' },
+            { label: 'Best post', value: '14.9%', change: 'Engagement', tone: 'pink' },
+        ],
+        charts: {
+            labels: ['Apr 26', 'May 1', 'May 6', 'May 11', 'May 16', 'May 21', 'May 25'],
+            followers: [113200, 115400, 118900, 120500, 123300, 126100, 128400],
+            engagement: [5.4, 5.9, 6.1, 5.7, 6.4, 6.6, 6.82],
+            posts: ['Launch reel', 'Carousel tips', 'Studio vlog', 'Template drop', 'AMA clip'],
+            postPerformance: [14900, 12100, 9800, 8700, 7600],
+        },
+        topPosts: [
+            { title: 'How I plan 30 days of content', type: 'Reel', likes: '14.2K', comments: '612', engagement: '14.9%', date: '24 May' },
+            { title: 'Creator OS desk setup walkthrough', type: 'Carousel', likes: '11.8K', comments: '488', engagement: '12.4%', date: '22 May' },
+            { title: '5 hooks that increased watch time', type: 'Reel', likes: '9.6K', comments: '371', engagement: '10.1%', date: '19 May' },
+            { title: 'Behind the scenes: newsletter build', type: 'Post', likes: '7.4K', comments: '284', engagement: '8.7%', date: '16 May' },
+        ],
+        timeline: [
+            { title: 'Top post detected', detail: 'Planning reel crossed 14.9% engagement.', time: 'Today, 4:20 PM' },
+            { title: 'Audience growth spike', detail: 'Followers increased by 2.3K over the last 48 hours.', time: 'Today, 11:10 AM' },
+            { title: 'Weekly consistency check', detail: 'Posting cadence stayed above 5 posts per week.', time: 'Yesterday' },
+            { title: 'Profile snapshot saved', detail: 'Mock analytics snapshot prepared for dashboard UI.', time: '24 May' },
+        ],
+    };
+}
+
 app.get("/dashboard", protect, async (req, res) => {
     const userDoc = await User.findById(req.user.id).select('name email').lean();
     const invites = await Invite.find({ inviter: req.user.id }).lean();
@@ -143,7 +190,7 @@ app.get('/services', (req, res) => {
 });
 
 // Protected service pages
-app.get('/services/:serviceKey', protect, (req, res) => {
+app.get('/services/:serviceKey', protect, async (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
     if (!service) {
@@ -170,6 +217,17 @@ app.get('/services/:serviceKey', protect, (req, res) => {
 
     if (service.key === 'creator-crm') {
         return res.redirect('/services/creator-crm');
+    }
+
+    if (service.key === 'analytics-dashboard') {
+        const userDoc = await User.findById(req.user.id).select('name email').lean();
+
+        return res.render('analytics-dashboard', {
+            service,
+            services,
+            user: buildAccountViewModel(userDoc, req.user),
+            analytics: buildAnalyticsViewModel(),
+        });
     }
 
     if (service.key === 'file-upload') {
