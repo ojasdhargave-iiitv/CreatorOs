@@ -151,8 +151,7 @@ const suggestions = {
       { title: "Not Afraid – Eminem", mood: "courageous" },
       { title: "Unstoppable – Sia", mood: "fearless" }
     ]
-  }
-};
- 
-module.exports = suggestions;
+ const Suggestion = mongoose.model('Suggestion', suggestionSchema);
+module.exports = Suggestion;
+
  
