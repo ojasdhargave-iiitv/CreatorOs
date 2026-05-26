@@ -13,21 +13,12 @@ const requiredEnvVars = [
 const missingVars = requiredEnvVars.filter((v) => !process.env[v.name]);
 
 if (missingVars.length > 0) {
-    console.error('\n❌ Missing required environment variables:');
+    console.warn('\n⚠️ Missing environment variables for full production mode:');
     missingVars.forEach((v) => {
-        console.error(`   - ${v.name} (${v.description})`);
+        console.warn(`   - ${v.name} (${v.description})`);
     });
-    console.error('\n📋 To set them up:');
-    console.error('   1. Copy the example env file:');
-    console.error('      cp .env.example .env.local');
-    console.error('   2. Edit .env.local and fill in the values:');
-    console.error('      - MONGODB_URI: Your MongoDB connection string');
-    console.error('        (for local MongoDB: mongodb://localhost:27017/creatoros)');
-    console.error('      - JWT_SECRET: Generate a random secret');
-    console.error('        by running: openssl rand -base64 32');
-    console.error('   3. Run the server again:');
-    console.error('      npm run dev\n');
-    process.exit(1);
+    console.warn('\n📋 The app will start in local mock mode.');
+    console.warn('   To use a real database, copy .env.example to .env.local and fill in the values.\n');
 }
 
 const app = express();
@@ -46,11 +37,33 @@ app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
 
+const rateLimit = require('express-rate-limit');
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    message: 'Too many login attempts, please try again later.'
+});
+app.use('/login', loginLimiter);
+
+const uploadLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: { error: 'Upload limit reached, please try again later.' }
+});
+
+const urlShortenerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 30,
+    message: 'Too many URLs generated, please try again later.'
+});
+
 app.use("/", authRoutes);
 
 const protect = require("./middleware/auth");
 
 const fs = require('fs');
+app.use(express.static(path.join(__dirname, 'public')));
 const shortid = require('shortid');
 const multer = require('multer');
 const services = require('./services.config');
@@ -66,9 +79,7 @@ app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
-// In-memory "database" to store URLs.
-// Note: This data will be lost when the server restarts.
-const urlDatabase = new Map();
+const Url = require('./model/url');
 
 app.use('/url', urlRoutes);
 
@@ -182,7 +193,7 @@ app.get('/services/:serviceKey', protect, (req, res) => {
 });
 
 // URL shortener submit flow (dedicated service route)
-app.post('/services/url-shortener/shorten', protect, async (req, res) => {
+app.post('/services/url-shortener/shorten', protect, urlShortenerLimiter, async (req, res) => {
     const { redirectUrl } = req.body;
     if (!redirectUrl) {
         return res.render('home', buildShortenerViewModel(req, null, 'Please enter a URL.'));
@@ -191,11 +202,9 @@ app.post('/services/url-shortener/shorten', protect, async (req, res) => {
     try {
         const shortId = shortid();
 
-        // Store the new link in our in-memory database
-        urlDatabase.set(shortId, {
+        await Url.create({
+            shortId,
             redirectUrl,
-            totalClicks: 0,
-            createdAt: [],
         });
 
         return res.render('home', buildShortenerViewModel(req, shortId));
@@ -207,7 +216,7 @@ app.post('/services/url-shortener/shorten', protect, async (req, res) => {
 });
 
 // File upload endpoint
-app.post('/services/file-upload/upload', protect, upload.single('file'), (req, res) => {
+app.post('/services/file-upload/upload', protect, uploadLimiter, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -223,13 +232,13 @@ app.post('/services/file-upload/upload', protect, upload.single('file'), (req, r
 app.get('/u/:shortId', async (req, res) => {
     const shortId = req.params.shortId;
 
-    // Find the entry in our in-memory database
-    const entry = urlDatabase.get(shortId);
+    const entry = await Url.findOne({ shortId });
 
     if (entry) {
         // Update analytics
         entry.totalClicks++;
         entry.createdAt.push({ timeStamp: new Date() });
+        await entry.save();
         return res.redirect(entry.redirectUrl);
     } else {
         return res.status(404).send('URL not found');
