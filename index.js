@@ -1,6 +1,7 @@
 require("dotenv").config({ path: ".env.local" });
 const cookieParser = require("cookie-parser");
 const express = require('express');
+const passport = require("passport");
 const path = require('path');
 
 // Validate required environment variables
@@ -31,6 +32,7 @@ connectDB();
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(passport.initialize());
 
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));

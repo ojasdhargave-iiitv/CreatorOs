@@ -65,13 +65,18 @@ const sendCollaboratorInvite = async (req, res, next) => {
     const inviteUrl = `${process.env.APP_URL || `${req.protocol}://${req.get('host')}`}/invites/accept/${token}`;
     const userDoc = await User.findById(req.user.id).select('name email').lean();
 
-    await sendInvitationEmail({
-      to: invite.email,
-      inviterName: userDoc?.name || 'CreatorOS',
-      projectName: invite.projectName,
-      inviteUrl,
-      personalMessage: invite.message,
-    });
+    try {
+      await sendInvitationEmail({
+        to: invite.email,
+        inviterName: userDoc?.name || 'CreatorOS',
+        projectName: invite.projectName,
+        inviteUrl,
+        personalMessage: invite.message,
+      });
+    } catch (emailError) {
+      await Invite.findByIdAndDelete(invite._id);
+      throw emailError;
+    }
 
     const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
     res.render('creator-crm', {

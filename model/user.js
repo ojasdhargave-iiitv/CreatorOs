@@ -9,14 +9,38 @@ const userSchema = new mongoose.Schema(
         },
 
         email: {
-        type: String,
-        required: true,
-        unique: true,
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
         },
 
         password: {
-        type: String,
-        required: true,
+            type: String,
+            required: function () {
+                return this.authProvider === "local";
+            },
+        },
+
+        authProvider: {
+            type: String,
+            enum: ["local", "google"],
+            default: "local",
+        },
+
+        googleId: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+
+        avatar: {
+            type: String,
+        },
+
+        lastLoginAt: {
+            type: Date,
         },
     },
     {
@@ -24,6 +48,7 @@ const userSchema = new mongoose.Schema(
     }
 );
 
+module.exports = mongoose.model("User", userSchema);
 const MongooseUserModel = mongoose.model("User", userSchema);
 
 // In-memory mock storage

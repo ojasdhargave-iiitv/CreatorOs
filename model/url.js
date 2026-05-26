@@ -6,7 +6,7 @@ const urlSchema= new mongoose.Schema({
         required: true,
         unique: true,
     },
-    
+
     redirectUrl: {
             type: String,
             required: true,
@@ -16,11 +16,12 @@ const urlSchema= new mongoose.Schema({
             default: 0,
         },
      createdAt: [{timeStamp: {type: Date, default: Date.now}}]
-    
+
 });
 
 const MongooseUrlModel = mongoose.model('Url', urlSchema);
 
+module.exports= Url;
 // In-memory array for mock URLs
 const mockUrls = [];
 

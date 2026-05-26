@@ -7,6 +7,322 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+
+.footer {
+  background: #f0ebe0;
+  border-top: 2.5px solid #1a1a1a;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a1a1a;
+  overflow: hidden;
+}
+
+.footer-ticker {
+  background: #1a1a1a;
+  padding: 11px 0;
+  overflow: hidden;
+  border-bottom: 2.5px solid #1a1a1a;
+}
+
+.footer-ticker-inner {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker-scroll 20s linear infinite;
+}
+
+.footer-ticker-inner span {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #f0ebe0;
+  padding: 0 28px;
+}
+
+.ticker-dot {
+  color: #1aba9c !important;
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.footer-hero {
+  padding: 72px 52px 64px;
+  border-bottom: 2.5px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid #1aba9c;
+  border-radius: 100px;
+  padding: 5px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1aba9c;
+  letter-spacing: 0.06em;
+  margin-bottom: 22px;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #1aba9c;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.footer-headline {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: clamp(38px, 5.5vw, 64px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  margin: 0 0 36px;
+  color: #1a1a1a;
+}
+
+.footer-headline em {
+  font-style: italic;
+  color: #1aba9c;
+}
+
+.footer-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 32px;
+  background: #1aba9c;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2.5px solid #1a1a1a;
+  border-radius: 100px;
+  box-shadow: 4px 4px 0 #1a1a1a;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.footer-btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1a1a1a;
+}
+
+.footer-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 32px;
+  background: #f5d76e;
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2.5px solid #1a1a1a;
+  border-radius: 100px;
+  box-shadow: 4px 4px 0 #1a1a1a;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.footer-btn-secondary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #1a1a1a;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  border-bottom: 2.5px solid #1a1a1a;
+}
+
+.footer-col {
+  padding: 44px 48px;
+  border-right: 2.5px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-col:last-child {
+  border-right: none;
+}
+
+.footer-col:not(.footer-brand) {
+  background: #ece7d8;
+}
+
+.footer-col-label {
+  font-size: 16px;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  margin: 0 0 22px;
+  padding-bottom: 10px;
+  width: 100%;
+}
+
+.footer-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.footer-logo-icon {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #5ab4f0, #6a7fe8);
+  border: none;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: #fff;
+  box-shadow: none;
+  font-family: 'Georgia', serif;
+}
+
+.footer-logo-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.footer-tagline {
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.55;
+  color: #666;
+  margin: 0 0 24px;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.footer-social {
+  width: 38px;
+  height: 38px;
+  border: 2px solid #1a1a1a;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #1a1a1a;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 #1a1a1a;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.footer-social:hover {
+  background: #1aba9c;
+  color: #fff;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #2a2a2a;
+  text-decoration: none;
+  margin-bottom: 8px;
+  font-weight: 500;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  transition: color 0.15s ease, gap 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer-link:hover {
+  color: #1aba9c;
+  gap: 12px;
+  background: #f0ebe0;
+  border-color: #1a1a1a;
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 48px;
+  border-top: 1px solid rgba(26, 26, 26, 0.1);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.footer-copy {
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.footer-bottom-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-bottom-link {
+  font-size: 12px;
+  color: #aaa;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.footer-bottom-link:hover {
+  color: #1a1a1a;
+}
+
+@media (max-width: 860px) {
+  .footer-hero {
+    padding: 52px 28px 44px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-col {
+    border-right: none;
+    border-bottom: 2.5px solid #1a1a1a;
+    padding: 36px 28px;
+  }
+
+  .footer-col:last-child {
+    border-bottom: none;
+  }
+
+  .footer-bottom {
+    padding: 18px 28px;
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 :root {
   --ink: #f7efe1;
   --ink2: #fff6ea;
@@ -769,6 +1085,7 @@ footer span { color: var(--cyan); }
   .service-item.visible { transform: translateY(0) !important; }
 }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <!-- Site-wide 3D background container (behind all content) -->
@@ -1169,10 +1486,90 @@ footer span { color: var(--cyan); }
   </div>
 </section>
 
-<footer>
-  <div class="container">
-    <p>&copy; 2026 CreatorOS. All Rights Reserved.</p>
+<footer class="footer">
+
+  <div class="footer-ticker">
+    <div class="footer-ticker-inner">
+      <span>ANALYTICS DASHBOARD</span><span class="ticker-dot">●</span>
+      <span>CONTENT OS</span><span class="ticker-dot">●</span>
+      <span>CREATOR CRM</span><span class="ticker-dot">●</span>
+      <span>DM AUTOMATION</span><span class="ticker-dot">●</span>
+      <span>SMART BIO SYSTEM</span><span class="ticker-dot">●</span>
+      <span>CAPTION &amp; HASHTAG TOOL</span><span class="ticker-dot">●</span>
+      <span>FILE UPLOAD VAULT</span><span class="ticker-dot">●</span>
+      <span>ANALYTICS DASHBOARD</span><span class="ticker-dot">●</span>
+      <span>CONTENT OS</span><span class="ticker-dot">●</span>
+      <span>CREATOR CRM</span><span class="ticker-dot">●</span>
+      <span>DM AUTOMATION</span><span class="ticker-dot">●</span>
+      <span>SMART BIO SYSTEM</span><span class="ticker-dot">●</span>
+      <span>CAPTION &amp; HASHTAG TOOL</span><span class="ticker-dot">●</span>
+      <span>FILE UPLOAD VAULT</span><span class="ticker-dot">●</span>
+    </div>
   </div>
+
+  <div class="footer-hero">
+    <div class="footer-badge">
+      <span class="badge-dot"></span> Platform Workspace Active — v2.0
+    </div>
+    <h2 class="footer-headline">
+      Your entire creator<br>empire, <em>unified.</em>
+    </h2>
+    <div class="footer-btns">
+      <a href="#" class="footer-btn-primary">Launch Dashboard →</a>
+      <a href="#" class="footer-btn-secondary">Explore Modules</a>
+    </div>
+  </div>
+
+  <div class="footer-grid">
+
+    <div class="footer-col footer-brand">
+      <div class="footer-logo-wrap">
+        <div class="footer-logo-icon">C</div>
+        <p class="footer-logo-name">CreatorOS</p>
+      </div>
+      <p class="footer-tagline">Every tool you need,<br>nothing you don't.</p>
+      <div class="footer-socials">
+        <a href="#" class="footer-social" aria-label="GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
+        <a href="#" class="footer-social" aria-label="Instagram">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+        <a href="#" class="footer-social" aria-label="X / Twitter">
+          <i class="fa-brands fa-x-twitter"></i>
+        </a>
+        <a href="#" class="footer-social" aria-label="Email">
+          <i class="fa-solid fa-envelope"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <p class="footer-col-label">Platform</p>
+      <a href="#" class="footer-link">→ Dashboard</a>
+      <a href="#" class="footer-link">→ Modules</a>
+      <a href="#" class="footer-link">→ Analytics</a>
+      <a href="#" class="footer-link">→ Workspace</a>
+    </div>
+
+    <div class="footer-col">
+      <p class="footer-col-label">Company</p>
+      <a href="#" class="footer-link">→ About</a>
+      <a href="#" class="footer-link">→ Changelog</a>
+      <a href="#" class="footer-link">→ Community</a>
+      <a href="#" class="footer-link">→ Contact</a>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 CreatorOS. All Rights Reserved.</span>
+    <div class="footer-bottom-links">
+      <a href="#" class="footer-bottom-link">Privacy</a>
+      <a href="#" class="footer-bottom-link">Terms</a>
+    </div>
+  </div>
+
 </footer>
 
 </div><!-- /page -->
