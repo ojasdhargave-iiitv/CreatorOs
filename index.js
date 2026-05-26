@@ -57,10 +57,12 @@ const Invite = require('./model/invite');
 
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
+const instagramRoutes = require('./routes/instagram');
 
 const suggestionRoutes = require('./routes/suggestionRoutes');
 // ... after your other app.use() lines:
 app.use('/suggestions', protect, suggestionRoutes);
+app.use('/api/instagram', protect, instagramRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
@@ -112,45 +114,35 @@ function buildAnalyticsViewModel() {
         isLoading: false,
         isEmpty: false,
         selectedRange: 'Last 30 days',
-        lastUpdated: '25 May 2026, 5:30 PM',
+        lastUpdated: null,
         profile: {
-            name: 'Aarav Studio',
-            handle: '@aaravstudio',
-            category: 'Digital creator',
-            bio: 'Short-form creator sharing design systems, creator workflows, and behind-the-scenes builds.',
-            avatarInitials: 'AS',
-            followers: '128.4K',
-            following: '642',
-            totalPosts: '318',
-            growthLabel: '+8.6%',
+            name: 'Profile not fetched',
+            handle: '@username',
+            category: 'Instagram public profile',
+            bio: 'Enter an Instagram username and click Analyze to fetch public profile details through the configured Instagram Graph API credentials.',
+            avatarInitials: 'IG',
+            followers: '--',
+            following: '--',
+            totalPosts: '--',
+            growthLabel: 'Awaiting profile',
         },
         metrics: [
-            { label: 'Followers', value: '128.4K', change: '+8.6%', tone: 'cyan' },
-            { label: 'Engagement rate', value: '6.82%', change: '+1.2%', tone: 'green' },
-            { label: 'Avg. likes', value: '8.7K', change: '+940', tone: 'blue' },
-            { label: 'Avg. comments', value: '412', change: '+38', tone: 'orange' },
-            { label: 'Posting frequency', value: '5.4/wk', change: 'Consistent', tone: 'violet' },
-            { label: 'Best post', value: '14.9%', change: 'Engagement', tone: 'pink' },
+            { label: 'Followers', value: '--', change: 'Fetch profile', tone: 'cyan' },
+            { label: 'Engagement rate', value: '--', change: 'Pending analytics', tone: 'green' },
+            { label: 'Avg. likes', value: '--', change: 'Pending posts', tone: 'blue' },
+            { label: 'Avg. comments', value: '--', change: 'Pending posts', tone: 'orange' },
+            { label: 'Posting frequency', value: '--', change: 'Pending history', tone: 'violet' },
+            { label: 'Best post', value: '--', change: 'Pending posts', tone: 'pink' },
         ],
         charts: {
-            labels: ['Apr 26', 'May 1', 'May 6', 'May 11', 'May 16', 'May 21', 'May 25'],
-            followers: [113200, 115400, 118900, 120500, 123300, 126100, 128400],
-            engagement: [5.4, 5.9, 6.1, 5.7, 6.4, 6.6, 6.82],
-            posts: ['Launch reel', 'Carousel tips', 'Studio vlog', 'Template drop', 'AMA clip'],
-            postPerformance: [14900, 12100, 9800, 8700, 7600],
+            labels: ['Start', 'Profile fetched', 'Snapshot 1', 'Snapshot 2', 'Snapshot 3'],
+            followers: [0, 0, 0, 0, 0],
+            engagement: [0, 0, 0, 0, 0],
+            posts: ['No posts'],
+            postPerformance: [0],
         },
-        topPosts: [
-            { title: 'How I plan 30 days of content', type: 'Reel', likes: '14.2K', comments: '612', engagement: '14.9%', date: '24 May' },
-            { title: 'Creator OS desk setup walkthrough', type: 'Carousel', likes: '11.8K', comments: '488', engagement: '12.4%', date: '22 May' },
-            { title: '5 hooks that increased watch time', type: 'Reel', likes: '9.6K', comments: '371', engagement: '10.1%', date: '19 May' },
-            { title: 'Behind the scenes: newsletter build', type: 'Post', likes: '7.4K', comments: '284', engagement: '8.7%', date: '16 May' },
-        ],
-        timeline: [
-            { title: 'Top post detected', detail: 'Planning reel crossed 14.9% engagement.', time: 'Today, 4:20 PM' },
-            { title: 'Audience growth spike', detail: 'Followers increased by 2.3K over the last 48 hours.', time: 'Today, 11:10 AM' },
-            { title: 'Weekly consistency check', detail: 'Posting cadence stayed above 5 posts per week.', time: 'Yesterday' },
-            { title: 'Profile snapshot saved', detail: 'Mock analytics snapshot prepared for dashboard UI.', time: '24 May' },
-        ],
+        topPosts: [],
+        timeline: [],
     };
 }
 

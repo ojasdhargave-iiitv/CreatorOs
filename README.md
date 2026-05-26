@@ -183,8 +183,12 @@ DATABASE_URL=
 MONGODB_URI=
 
 # Instagram Graph API
-INSTAGRAM_APP_ID=
-INSTAGRAM_APP_SECRET=
+META_APP_ID=
+META_APP_SECRET=
+META_GRAPH_API_VERSION=v25.0
+INSTAGRAM_ACCESS_TOKEN=
+INSTAGRAM_BUSINESS_ACCOUNT_ID=
+INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
 
 # AI
 OPENAI_API_KEY=
@@ -193,6 +197,27 @@ OPENROUTER_API_KEY=
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+### Instagram Profile Fetching
+
+The Creator Analytics dashboard can fetch public Instagram Business/Creator profile data through Meta's official Instagram Graph API. This module does not scrape Instagram, does not collect user passwords, and keeps all API credentials on the server.
+
+Required setup:
+
+1. Create or open a Meta app at `https://developers.facebook.com/apps/`.
+2. In the Meta app dashboard, open **App settings > Basic** to copy the App ID and reveal the App Secret.
+3. Add/configure the Instagram product and connect a Facebook Page to an Instagram Business or Creator account.
+4. Generate an access token with the required Instagram Graph API permissions.
+5. Find the connected Instagram business account ID and set it as `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
+6. Add the values to `.env.local`.
+
+The profile lookup endpoint is protected and available at:
+
+```http
+GET /api/instagram/profile?username=<instagram_username>
+```
+
+It returns a normalized profile response with username, name, profile image, bio, followers, following, total posts, source, and fetch timestamp. Public lookup availability depends on Meta API permissions and account eligibility.
 
 ### Run Locally
 
