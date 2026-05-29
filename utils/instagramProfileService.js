@@ -1,8 +1,8 @@
-const crypto = require('crypto');
+const { execFile } = require('child_process');
+const path = require('path');
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
-const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
-const DEFAULT_GRAPH_API_VERSION = 'v25.0';
+const DEFAULT_TIMEOUT_MS = 8000;
 
 class InstagramProfileError extends Error {
     constructor(code, message, statusCode = 500, details = null) {
@@ -43,122 +43,316 @@ function validateUsername(username) {
     return normalizedUsername;
 }
 
-function getInstagramConfig() {
-    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-    const businessAccountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
+function runPythonProvider(username) {
+    const pythonPath = process.env.INSTAGRAM_PYTHON_PATH || 'python';
+    const scriptPath = path.join(__dirname, 'instagram_public_profile.py');
 
-    if (!accessToken || !businessAccountId) {
-        throw new InstagramProfileError(
-            'MISSING_INSTAGRAM_CONFIG',
-            'Instagram API credentials are not configured. Add INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID to your environment.',
-            500
+    return new Promise((resolve, reject) => {
+        execFile(
+            pythonPath,
+            [scriptPath, username],
+            { timeout: DEFAULT_TIMEOUT_MS, maxBuffer: 1024 * 1024 },
+            (error, stdout, stderr) => {
+                if (error) {
+                    if (error.killed || error.signal === 'SIGTERM') {
+                        return reject(new InstagramProfileError(
+                            'TEMPORARY_FETCH_ERROR',
+                            'Instagram profile request timed out. Please try again.',
+                            504
+                        ));
+                    }
+
+                    const message = stderr?.trim() || 'Unable to fetch Instagram profile via Python provider.';
+                    return reject(new InstagramProfileError('TEMPORARY_FETCH_ERROR', message, 500));
+                }
+
+                let payload = null;
+                try {
+                    payload = JSON.parse(stdout);
+                } catch (parseError) {
+                    return reject(new InstagramProfileError(
+                        'TEMPORARY_FETCH_ERROR',
+                        'Python provider returned invalid JSON.',
+                        500
+                    ));
+                }
+
+                if (!payload || typeof payload !== 'object') {
+                    return reject(new InstagramProfileError(
+                        'TEMPORARY_FETCH_ERROR',
+                        'Python provider returned an empty response.',
+                        500
+                    ));
+                }
+
+                if (payload.success === false) {
+                    const errorPayload = payload.error || {};
+                    return reject(new InstagramProfileError(
+                        errorPayload.code || 'TEMPORARY_FETCH_ERROR',
+                        errorPayload.message || 'Python provider failed to fetch the profile.',
+                        errorPayload.statusCode || 500
+                    ));
+                }
+
+                return resolve(payload.data);
+            }
         );
+    });
+}
+
+function parseMetricValue(raw) {
+    if (!raw) {
+        return 0;
+    }
+
+    const normalized = String(raw).trim().toLowerCase().replace(/,/g, '');
+    const match = normalized.match(/(\d+(?:\.\d+)?)([km])?/);
+
+    if (!match) {
+        return Number.parseInt(normalized, 10) || 0;
+    }
+
+    const base = Number.parseFloat(match[1]);
+    const suffix = match[2];
+
+    if (suffix === 'k') {
+        return Math.round(base * 1000);
+    }
+
+    if (suffix === 'm') {
+        return Math.round(base * 1000000);
+    }
+
+    return Math.round(base);
+}
+
+function extractMetaContent(html, property) {
+    const pattern = new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i');
+    const match = html.match(pattern);
+    return match ? decodeHtmlEntities(match[1]) : '';
+}
+
+function decodeHtmlEntities(value) {
+    if (!value) {
+        return '';
+    }
+
+    return String(value)
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&amp;/gi, '&')
+        .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+        .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
+function extractNameAndHandle(ogTitle, username) {
+    if (!ogTitle) {
+        return { name: username, handle: username };
+    }
+
+    const match = ogTitle.match(/^(.*?)\s*\(@([^\)]+)\)/);
+    if (!match) {
+        return { name: ogTitle, handle: username };
     }
 
     return {
-        accessToken,
-        businessAccountId,
-        appSecret: process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET,
-        graphApiVersion: process.env.META_GRAPH_API_VERSION || DEFAULT_GRAPH_API_VERSION,
+        name: match[1].trim() || username,
+        handle: match[2].trim() || username,
     };
 }
 
-function buildAppSecretProof(accessToken, appSecret) {
-    if (!appSecret) {
-        return null;
+function extractCounts(ogDescription) {
+    if (!ogDescription) {
+        return { followers: 0, following: 0, totalPosts: 0, hasCountTokens: false };
     }
 
-    return crypto
-        .createHmac('sha256', appSecret)
-        .update(accessToken)
-        .digest('hex');
-}
-
-function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function requestWithRetry(url, attempts = 3) {
-    let lastError = null;
-
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
-        try {
-            const response = await fetch(url);
-            const payload = await response.json().catch(() => ({}));
-
-            if (response.ok) {
-                return payload;
-            }
-
-            const apiError = payload.error || {};
-            lastError = new InstagramProfileError(
-                response.status === 404 ? 'PROFILE_NOT_FOUND' : 'INSTAGRAM_API_ERROR',
-                apiError.message || 'Instagram API returned an error while fetching the profile.',
-                response.status,
-                apiError
-            );
-
-            if (!RETRYABLE_STATUSES.has(response.status) || attempt === attempts) {
-                throw lastError;
-            }
-        } catch (error) {
-            lastError = error;
-
-            if (error instanceof InstagramProfileError && !RETRYABLE_STATUSES.has(error.statusCode)) {
-                throw error;
-            }
-
-            if (attempt === attempts) {
-                throw error;
-            }
-        }
-
-        await delay(250 * attempt);
-    }
-
-    throw lastError;
-}
-
-function normalizeProfile(profile, username) {
-    if (!profile || !profile.id) {
-        throw new InstagramProfileError(
-            'PROFILE_NOT_FOUND',
-            'Unable to fetch this Instagram profile. Make sure it is a public Business or Creator account.',
-            404
-        );
-    }
+    const followersMatch = ogDescription.match(/([\d.,]+\s*[km]?)\s*Followers/i);
+    const followingMatch = ogDescription.match(/([\d.,]+\s*[km]?)\s*Following/i);
+    const postsMatch = ogDescription.match(/([\d.,]+\s*[km]?)\s*Posts/i);
+    const hasCountTokens = /Followers/i.test(ogDescription) && /Posts/i.test(ogDescription);
 
     return {
-        username: profile.username || username,
-        name: profile.name || profile.username || username,
-        profileImage: profile.profile_picture_url || '',
-        bio: profile.biography || '',
-        category: 'Public creator profile',
-        followers: Number(profile.followers_count || 0),
-        following: Number(profile.follows_count || 0),
-        totalPosts: Number(profile.media_count || 0),
-        source: 'instagram_graph_api',
+        followers: parseMetricValue(followersMatch?.[1]),
+        following: parseMetricValue(followingMatch?.[1]),
+        totalPosts: parseMetricValue(postsMatch?.[1]),
+        hasCountTokens,
+    };
+}
+
+function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
+    return /this account is private/i.test(html)
+        || /private account/i.test(html)
+        || /"is_private"\s*:\s*true/i.test(html)
+        || /this account is private/i.test(ogDescription)
+        || /follow this account to see their photos and videos/i.test(ogDescription)
+        || /private/i.test(ogTitle);
+}
+
+function buildNormalizedProfile({ username, name, profileImage, bio, followers, following, totalPosts, source }) {
+    return {
+        username,
+        name,
+        profileImage,
+        bio,
+        followers: Number(followers || 0),
+        following: Number(following || 0),
+        totalPosts: Number(totalPosts || 0),
+        category: 'Instagram public profile',
+        source,
         fetchedAt: new Date().toISOString(),
     };
 }
 
-async function fetchInstagramProfile(username) {
-    const normalizedUsername = validateUsername(username);
-    const config = getInstagramConfig();
-    const params = new URLSearchParams({
-        fields: `business_discovery.username(${normalizedUsername}){id,username,name,biography,profile_picture_url,followers_count,follows_count,media_count}`,
-        access_token: config.accessToken,
-    });
-    const appSecretProof = buildAppSecretProof(config.accessToken, config.appSecret);
+async function fetchPublicHtmlProfile(username) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
-    if (appSecretProof) {
-        params.set('appsecret_proof', appSecretProof);
+    try {
+        const url = `https://www.instagram.com/${encodeURIComponent(username)}/`;
+        const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; CreatorOS/1.0; +https://creatoros.local)',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+        });
+
+        if (response.status === 404) {
+            throw new InstagramProfileError(
+                'PROFILE_NOT_FOUND',
+                'Instagram profile not found.',
+                404
+            );
+        }
+
+        if (response.status === 429) {
+            throw new InstagramProfileError(
+                'RATE_LIMITED',
+                'Instagram is rate limiting public profile requests. Please try again later.',
+                429
+            );
+        }
+
+        if (!response.ok) {
+            throw new InstagramProfileError(
+                'TEMPORARY_FETCH_ERROR',
+                'Instagram profile could not be fetched right now. Please try again later.',
+                response.status
+            );
+        }
+
+        const html = await response.text();
+
+        if (isPrivateProfile(html)) {
+            throw new InstagramProfileError(
+                'PRIVATE_PROFILE_UNSUPPORTED',
+                'This Instagram profile is private and cannot be fetched without authorized access.',
+                403
+            );
+        }
+
+        const ogTitle = extractMetaContent(html, 'og:title');
+        const ogDescription = extractMetaContent(html, 'og:description');
+        const ogImage = extractMetaContent(html, 'og:image');
+
+        if (isPrivateProfile(html, ogDescription, ogTitle)) {
+            throw new InstagramProfileError(
+                'PRIVATE_PROFILE_UNSUPPORTED',
+                'This Instagram profile is private and cannot be fetched without authorized access.',
+                403
+            );
+        }
+        const { name, handle } = extractNameAndHandle(ogTitle, username);
+        const counts = extractCounts(ogDescription);
+
+        if (!counts.hasCountTokens) {
+            throw new InstagramProfileError(
+                'PRIVATE_PROFILE_UNSUPPORTED',
+                'This Instagram profile is private and cannot be fetched without authorized access.',
+                403
+            );
+        }
+
+        return buildNormalizedProfile({
+            username: handle || username,
+            name,
+            profileImage: ogImage,
+            bio: ogDescription || '',
+            followers: counts.followers,
+            following: counts.following,
+            totalPosts: counts.totalPosts,
+            source: 'instagram_public_html',
+        });
+    } catch (error) {
+        if (error instanceof InstagramProfileError) {
+            throw error;
+        }
+
+        if (error.name === 'AbortError') {
+            throw new InstagramProfileError(
+                'TEMPORARY_FETCH_ERROR',
+                'Instagram profile request timed out. Please try again.',
+                504
+            );
+        }
+
+        throw new InstagramProfileError(
+            'TEMPORARY_FETCH_ERROR',
+            'Unable to fetch Instagram profile right now. Please try again later.',
+            500
+        );
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+async function fetchPythonPublicProfile(username) {
+    const data = await runPythonProvider(username);
+
+    if (!data || !data.username) {
+        throw new InstagramProfileError(
+            'TEMPORARY_FETCH_ERROR',
+            'Python provider returned an invalid profile payload.',
+            500
+        );
     }
 
-    const url = `https://graph.facebook.com/${config.graphApiVersion}/${config.businessAccountId}?${params.toString()}`;
-    const payload = await requestWithRetry(url);
+    return buildNormalizedProfile({
+        username: data.username,
+        name: data.name || data.username,
+        profileImage: data.profileImage || '',
+        bio: data.bio || '',
+        followers: data.followers || 0,
+        following: data.following || 0,
+        totalPosts: data.totalPosts || 0,
+        source: 'instagram_python_public',
+    });
+}
 
-    return normalizeProfile(payload.business_discovery, normalizedUsername);
+function resolveProvider() {
+    const provider = (process.env.INSTAGRAM_PUBLIC_PROVIDER || 'public_html').toLowerCase();
+
+    if (provider === 'public_html') {
+        return fetchPublicHtmlProfile;
+    }
+
+    if (provider === 'python_public') {
+        return fetchPythonPublicProfile;
+    }
+
+    throw new InstagramProfileError(
+        'PUBLIC_PROVIDER_UNAVAILABLE',
+        'No public Instagram provider is configured. Please set INSTAGRAM_PUBLIC_PROVIDER to a supported provider.',
+        500
+    );
+}
+
+async function fetchInstagramProfile(username) {
+    const normalizedUsername = validateUsername(username);
+    const provider = resolveProvider();
+    return provider(normalizedUsername);
 }
 
 module.exports = {

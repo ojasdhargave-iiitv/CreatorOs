@@ -1084,12 +1084,12 @@
                                     <strong id="profilePosts"><%= analytics.profile.totalPosts %></strong>
                                 </div>
                             </div>
-                            <p class="muted" id="profileRefreshed">No Instagram profile has been fetched yet. Configure official Instagram Graph API credentials, then enter a username to load public profile details.</p>
+                            <p class="muted" id="profileRefreshed">No Instagram profile has been fetched yet. Configure the public profile provider, then enter a username to load public profile details.</p>
                         </section>
 
                         <div class="metrics-grid">
                             <% analytics.metrics.forEach((metric) => { %>
-                                <article class="metric-card <%= metric.tone %>">
+                                <article class="metric-card <%= metric.tone %>" data-metric="<%= metric.label.toLowerCase().replace(/[^a-z0-9]+/g, '-') %>">
                                     <div class="metric-icon">
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                                             <path d="m3 17 6-6 4 4 8-8"></path>
@@ -1226,6 +1226,7 @@
         const profilePosts = document.getElementById('profilePosts');
         const profileRefreshed = document.getElementById('profileRefreshed');
         const followersMetricValue = document.getElementById('followersMetricValue');
+        const metricCards = document.querySelectorAll('.metric-card');
         let followersChart;
         let engagementChart;
         let postPerformanceChart;
@@ -1291,10 +1292,29 @@
             profileFollowers.textContent = formattedFollowers;
             profileFollowing.textContent = formattedFollowing;
             profilePosts.textContent = formattedPosts;
-            profileRefreshed.textContent = `Last refreshed ${new Date(profile.fetchedAt).toLocaleString()}. Profile data is fetched from Instagram Graph API. Mock analytics are still used for charts until the analytics engine is connected.`;
+            profileRefreshed.textContent = `Last refreshed ${new Date(profile.fetchedAt).toLocaleString()}. Profile data is fetched from the public profile provider. Mock analytics are still used for charts until the analytics engine is connected.`;
 
             if (followersMetricValue) {
                 followersMetricValue.textContent = formattedFollowers;
+            }
+
+            if (metricCards.length > 0) {
+                metricCards.forEach((card) => {
+                    const metricKey = card.dataset.metric;
+                    const valueEl = card.querySelector('.metric-value');
+                    const trendEl = card.querySelector('.trend-pill');
+
+                    if (!metricKey || !valueEl) {
+                        return;
+                    }
+
+                    if (metricKey === 'followers') {
+                        valueEl.textContent = formattedFollowers;
+                        if (trendEl) {
+                            trendEl.textContent = 'Live count';
+                        }
+                    }
+                });
             }
 
             updateChart(followersChart, {

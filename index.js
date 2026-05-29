@@ -119,7 +119,7 @@ function buildAnalyticsViewModel() {
             name: 'Profile not fetched',
             handle: '@username',
             category: 'Instagram public profile',
-            bio: 'Enter an Instagram username and click Analyze to fetch public profile details through the configured Instagram Graph API credentials.',
+            bio: 'Enter an Instagram username and click Analyze to fetch public profile details through the configured public-profile provider.',
             avatarInitials: 'IG',
             followers: '--',
             following: '--',

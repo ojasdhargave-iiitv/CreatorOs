@@ -182,12 +182,9 @@ CLERK_SECRET_KEY=
 DATABASE_URL=
 MONGODB_URI=
 
-# Instagram Graph API
-META_APP_ID=
-META_APP_SECRET=
-META_GRAPH_API_VERSION=v25.0
-INSTAGRAM_ACCESS_TOKEN=
-INSTAGRAM_BUSINESS_ACCOUNT_ID=
+# Instagram Public Profile Fetching
+INSTAGRAM_PUBLIC_PROVIDER=public_html
+INSTAGRAM_PYTHON_PATH=python
 INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
 
 # AI
@@ -200,16 +197,18 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### Instagram Profile Fetching
 
-The Creator Analytics dashboard can fetch public Instagram Business/Creator profile data through Meta's official Instagram Graph API. This module does not scrape Instagram, does not collect user passwords, and keeps all API credentials on the server.
+The Creator Analytics dashboard fetches public Instagram profile metadata via a provider-based service. It does **not** collect passwords, does **not** use session cookies, and does **not** access private profiles. Private accounts return `PRIVATE_PROFILE_UNSUPPORTED`.
+
+Supported providers:
+
+- `public_html` (default): pulls public profile metadata from Instagram's public profile page.
+- `python_public`: uses a small Python adapter for the same public-only metadata.
 
 Required setup:
 
-1. Create or open a Meta app at `https://developers.facebook.com/apps/`.
-2. In the Meta app dashboard, open **App settings > Basic** to copy the App ID and reveal the App Secret.
-3. Add/configure the Instagram product and connect a Facebook Page to an Instagram Business or Creator account.
-4. Generate an access token with the required Instagram Graph API permissions.
-5. Find the connected Instagram business account ID and set it as `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
-6. Add the values to `.env.local`.
+1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env.local`.
+2. If using `python_public`, ensure Python 3 is installed and set `INSTAGRAM_PYTHON_PATH` if needed.
+3. Optionally adjust `INSTAGRAM_LOOKUP_COOLDOWN_SECONDS` for per-user cooldown.
 
 The profile lookup endpoint is protected and available at:
 
@@ -217,7 +216,7 @@ The profile lookup endpoint is protected and available at:
 GET /api/instagram/profile?username=<instagram_username>
 ```
 
-It returns a normalized profile response with username, name, profile image, bio, followers, following, total posts, source, and fetch timestamp. Public lookup availability depends on Meta API permissions and account eligibility.
+It returns a normalized profile response with username, name, profile image, bio, followers, following, total posts, source, and fetch timestamp. Public lookup availability depends on Instagram's public profile page being accessible.
 
 ### Run Locally
 
