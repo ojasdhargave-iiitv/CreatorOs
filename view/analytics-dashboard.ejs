@@ -401,6 +401,12 @@
             height: 4.5rem;
             flex: 0 0 auto;
             font-size: 1.2rem;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .profile-avatar.has-image span {
+            display: none;
         }
 
         .profile-overview h2,
@@ -516,6 +522,38 @@
             padding: 0.45rem 0.75rem;
             color: #67e8f9;
             background: rgba(34, 211, 238, 0.12);
+        }
+
+        .lookup-message {
+            display: none;
+            margin-bottom: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.045);
+            line-height: 1.55;
+        }
+
+        .lookup-message.show {
+            display: block;
+        }
+
+        .lookup-message.success {
+            color: #d1fae5;
+            border-color: rgba(34, 197, 94, 0.24);
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .lookup-message.error {
+            color: #fee2e2;
+            border-color: rgba(248, 113, 113, 0.24);
+            background: rgba(248, 113, 113, 0.12);
+        }
+
+        .primary-action.is-loading {
+            opacity: 0.72;
+            cursor: wait;
         }
 
         .analytics-grid {
@@ -684,6 +722,19 @@
         .empty-state h2 {
             margin-bottom: 0.35rem;
             font-size: 1.7rem;
+        }
+
+        .inline-empty {
+            display: grid;
+            place-items: center;
+            min-height: 180px;
+            padding: 1rem;
+            border: 1px dashed rgba(148, 163, 184, 0.22);
+            border-radius: 1rem;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.035);
+            text-align: center;
+            line-height: 1.6;
         }
 
         .loading-grid {
@@ -967,22 +1018,23 @@
                         <h1>Creator Analytics</h1>
                         <p>Track Instagram growth, engagement, top content, and activity signals from one focused dashboard.</p>
                     </div>
-                    <form class="toolbar" action="/services/analytics-dashboard" method="GET">
-                        <input class="input-pill" type="text" name="username" value="<%= analytics.profile.handle.replace('@', '') %>" placeholder="Instagram username" aria-label="Instagram username">
+                    <form class="toolbar" action="/services/analytics-dashboard" method="GET" id="instagramLookupForm">
+                        <input class="input-pill" type="text" name="username" value="" placeholder="Instagram username" aria-label="Instagram username" id="instagramUsernameInput" autocomplete="off">
                         <select class="select-pill" name="range" aria-label="Analytics date range">
                             <option selected><%= analytics.selectedRange %></option>
                             <option>Last 7 days</option>
                             <option>Last 90 days</option>
                         </select>
-                        <button class="primary-action" type="submit">
+                        <button class="primary-action" type="submit" id="instagramLookupButton">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                                 <path d="M21 21l-4.3-4.3"></path>
                                 <circle cx="11" cy="11" r="8"></circle>
                             </svg>
-                            Analyze
+                            <span id="instagramLookupButtonText">Analyze</span>
                         </button>
                     </form>
                 </div>
+                <div class="lookup-message" id="instagramLookupMessage" role="status" aria-live="polite"></div>
 
                 <% if (analytics.isLoading) { %>
                     <div class="loading-grid" aria-label="Loading analytics">
@@ -1011,28 +1063,28 @@
                     <div class="overview-grid">
                         <section class="panel profile-overview">
                             <div class="profile-top">
-                                <div class="profile-avatar"><%= analytics.profile.avatarInitials %></div>
+                                <div class="profile-avatar" id="profileAvatar"><span id="profileAvatarInitials"><%= analytics.profile.avatarInitials %></span></div>
                                 <div>
-                                    <h2><%= analytics.profile.name %></h2>
-                                    <p class="handle"><%= analytics.profile.handle %> / <%= analytics.profile.category %></p>
-                                    <p class="panel-copy"><%= analytics.profile.bio %></p>
+                                    <h2 id="profileName"><%= analytics.profile.name %></h2>
+                                    <p class="handle" id="profileHandle"><%= analytics.profile.handle %> / <%= analytics.profile.category %></p>
+                                    <p class="panel-copy" id="profileBio"><%= analytics.profile.bio %></p>
                                 </div>
                             </div>
                             <div class="profile-stats">
                                 <div class="mini-stat">
                                     <span>Followers</span>
-                                    <strong><%= analytics.profile.followers %></strong>
+                                    <strong id="profileFollowers"><%= analytics.profile.followers %></strong>
                                 </div>
                                 <div class="mini-stat">
                                     <span>Following</span>
-                                    <strong><%= analytics.profile.following %></strong>
+                                    <strong id="profileFollowing"><%= analytics.profile.following %></strong>
                                 </div>
                                 <div class="mini-stat">
                                     <span>Posts</span>
-                                    <strong><%= analytics.profile.totalPosts %></strong>
+                                    <strong id="profilePosts"><%= analytics.profile.totalPosts %></strong>
                                 </div>
                             </div>
-                            <p class="muted">Last refreshed <%= analytics.lastUpdated %>. Mock data is used until the profile fetching module is connected.</p>
+                            <p class="muted" id="profileRefreshed">No Instagram profile has been fetched yet. Configure official Instagram Graph API credentials, then enter a username to load public profile details.</p>
                         </section>
 
                         <div class="metrics-grid">
@@ -1046,7 +1098,7 @@
                                     </div>
                                     <div>
                                         <h3><%= metric.label %></h3>
-                                        <p class="metric-value"><%= metric.value %></p>
+                                        <p class="metric-value" <%= metric.label === 'Followers' ? 'id="followersMetricValue"' : '' %>><%= metric.value %></p>
                                     </div>
                                     <span class="trend-pill"><%= metric.change %></span>
                                 </article>
@@ -1089,13 +1141,17 @@
                                     </div>
                                 </div>
                                 <div class="timeline">
-                                    <% analytics.timeline.forEach((event) => { %>
-                                        <article class="timeline-item">
-                                            <strong><%= event.title %></strong>
-                                            <span><%= event.detail %></span>
-                                            <small><%= event.time %></small>
-                                        </article>
-                                    <% }) %>
+                                    <% if (analytics.timeline.length === 0) { %>
+                                        <div class="inline-empty" id="timelineEmpty">No activity yet. Events will appear here after profile snapshots and analytics processing are connected.</div>
+                                    <% } else { %>
+                                        <% analytics.timeline.forEach((event) => { %>
+                                            <article class="timeline-item">
+                                                <strong><%= event.title %></strong>
+                                                <span><%= event.detail %></span>
+                                                <small><%= event.time %></small>
+                                            </article>
+                                        <% }) %>
+                                    <% } %>
                                 </div>
                             </section>
                         </div>
@@ -1115,20 +1171,24 @@
                     </section>
 
                     <section class="posts-grid" aria-label="Top posts">
-                        <% analytics.topPosts.forEach((post) => { %>
-                            <article class="post-card">
-                                <div class="post-thumb"><%= post.type %></div>
-                                <div>
-                                    <p class="post-meta"><%= post.date %></p>
-                                    <h3><%= post.title %></h3>
-                                </div>
-                                <div class="post-stats">
-                                    <span>Likes<strong><%= post.likes %></strong></span>
-                                    <span>Comments<strong><%= post.comments %></strong></span>
-                                    <span>Rate<strong><%= post.engagement %></strong></span>
-                                </div>
-                            </article>
-                        <% }) %>
+                        <% if (analytics.topPosts.length === 0) { %>
+                            <div class="inline-empty" style="grid-column: 1 / -1;" id="topPostsEmpty">No top posts yet. Post rankings will appear after post analytics data is available.</div>
+                        <% } else { %>
+                            <% analytics.topPosts.forEach((post) => { %>
+                                <article class="post-card">
+                                    <div class="post-thumb"><%= post.type %></div>
+                                    <div>
+                                        <p class="post-meta"><%= post.date %></p>
+                                        <h3><%= post.title %></h3>
+                                    </div>
+                                    <div class="post-stats">
+                                        <span>Likes<strong><%= post.likes %></strong></span>
+                                        <span>Comments<strong><%= post.comments %></strong></span>
+                                        <span>Rate<strong><%= post.engagement %></strong></span>
+                                    </div>
+                                </article>
+                            <% }) %>
+                        <% } %>
                     </section>
                 <% } %>
             </section>
@@ -1151,6 +1211,141 @@
             localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
         });
 
+        const instagramLookupForm = document.getElementById('instagramLookupForm');
+        const instagramUsernameInput = document.getElementById('instagramUsernameInput');
+        const instagramLookupButton = document.getElementById('instagramLookupButton');
+        const instagramLookupButtonText = document.getElementById('instagramLookupButtonText');
+        const instagramLookupMessage = document.getElementById('instagramLookupMessage');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+        const profileName = document.getElementById('profileName');
+        const profileHandle = document.getElementById('profileHandle');
+        const profileBio = document.getElementById('profileBio');
+        const profileFollowers = document.getElementById('profileFollowers');
+        const profileFollowing = document.getElementById('profileFollowing');
+        const profilePosts = document.getElementById('profilePosts');
+        const profileRefreshed = document.getElementById('profileRefreshed');
+        const followersMetricValue = document.getElementById('followersMetricValue');
+        let followersChart;
+        let engagementChart;
+        let postPerformanceChart;
+
+        function formatCompactNumber(value) {
+            return new Intl.NumberFormat('en', {
+                notation: 'compact',
+                maximumFractionDigits: 1,
+            }).format(Number(value || 0));
+        }
+
+        function getInitials(name, username) {
+            const source = String(name || username || 'Creator').trim();
+            return source
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0].toUpperCase())
+                .join('') || 'CR';
+        }
+
+        function setLookupMessage(type, message) {
+            if (!instagramLookupMessage) {
+                return;
+            }
+
+            instagramLookupMessage.className = `lookup-message show ${type}`;
+            instagramLookupMessage.textContent = message;
+        }
+
+        function clearLookupMessage() {
+            if (!instagramLookupMessage) {
+                return;
+            }
+
+            instagramLookupMessage.className = 'lookup-message';
+            instagramLookupMessage.textContent = '';
+        }
+
+        function setLookupLoading(isLoading) {
+            if (!instagramLookupButton || !instagramLookupButtonText) {
+                return;
+            }
+
+            instagramLookupButton.disabled = isLoading;
+            instagramLookupButton.classList.toggle('is-loading', isLoading);
+            instagramLookupButtonText.textContent = isLoading ? 'Fetching...' : 'Analyze';
+        }
+
+        function updateProfileOverview(profile) {
+            if (!profileName || !profileHandle || !profileBio || !profileFollowers || !profileFollowing || !profilePosts || !profileRefreshed || !profileAvatar || !profileAvatarInitials) {
+                return;
+            }
+
+            const displayName = profile.name || profile.username;
+            const formattedFollowers = formatCompactNumber(profile.followers);
+            const formattedFollowing = formatCompactNumber(profile.following);
+            const formattedPosts = formatCompactNumber(profile.totalPosts);
+
+            profileName.textContent = displayName;
+            profileHandle.textContent = `@${profile.username} / ${profile.category || 'Public creator profile'}`;
+            profileBio.textContent = profile.bio || 'No public bio available for this profile.';
+            profileFollowers.textContent = formattedFollowers;
+            profileFollowing.textContent = formattedFollowing;
+            profilePosts.textContent = formattedPosts;
+            profileRefreshed.textContent = `Last refreshed ${new Date(profile.fetchedAt).toLocaleString()}. Profile data is fetched from Instagram Graph API. Mock analytics are still used for charts until the analytics engine is connected.`;
+
+            if (followersMetricValue) {
+                followersMetricValue.textContent = formattedFollowers;
+            }
+
+            updateChart(followersChart, {
+                labels: ['Current'],
+                data: [Number(profile.followers || 0)],
+            });
+
+            if (profile.profileImage) {
+                profileAvatar.classList.add('has-image');
+                profileAvatar.style.backgroundImage = `url("${profile.profileImage}")`;
+            } else {
+                profileAvatar.classList.remove('has-image');
+                profileAvatar.style.backgroundImage = '';
+            }
+
+            profileAvatarInitials.textContent = getInitials(displayName, profile.username);
+        }
+
+        if (instagramLookupForm) {
+            instagramLookupForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                clearLookupMessage();
+
+                const username = instagramUsernameInput.value.trim().replace(/^@/, '');
+
+                if (!username) {
+                    setLookupMessage('error', 'Enter an Instagram username to fetch profile data.');
+                    return;
+                }
+
+                try {
+                    setLookupLoading(true);
+
+                    const response = await fetch(`/api/instagram/profile?username=${encodeURIComponent(username)}`);
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.error?.message || 'Unable to fetch this Instagram profile.');
+                    }
+
+                    updateProfileOverview(payload.data);
+                    instagramUsernameInput.value = payload.data.username;
+                    setLookupMessage('success', `Fetched @${payload.data.username}. Profile overview is now using live Instagram data.`);
+                } catch (error) {
+                    setLookupMessage('error', error.message);
+                } finally {
+                    setLookupLoading(false);
+                }
+            });
+        }
+
         const analyticsData = <%- JSON.stringify(analytics.charts) %>;
         const chartText = '#cbd5e1';
         const chartGrid = 'rgba(148, 163, 184, 0.16)';
@@ -1169,10 +1364,20 @@
         const engagementCanvas = document.getElementById('engagementChart');
         const postCanvas = document.getElementById('postPerformanceChart');
 
+        function updateChart(chart, nextData) {
+            if (!chart || !nextData) {
+                return;
+            }
+
+            chart.data.labels = nextData.labels;
+            chart.data.datasets[0].data = nextData.data;
+            chart.update();
+        }
+
         if (followersCanvas && engagementCanvas && postCanvas) {
             const followersCtx = followersCanvas.getContext('2d');
 
-            new Chart(followersCtx, {
+            followersChart = new Chart(followersCtx, {
                 type: 'line',
                 data: {
                     labels: analyticsData.labels,
@@ -1195,12 +1400,12 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { color: chartGrid } },
-                        y: { grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
+                        y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
                     },
                 },
             });
 
-            new Chart(engagementCanvas, {
+            engagementChart = new Chart(engagementCanvas, {
                 type: 'line',
                 data: {
                     labels: analyticsData.labels,
@@ -1220,12 +1425,12 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { display: false } },
-                        y: { grid: { color: chartGrid }, ticks: { callback: (value) => `${value}%` } },
+                        y: { beginAtZero: true, suggestedMax: 10, grid: { color: chartGrid }, ticks: { callback: (value) => `${value}%` } },
                     },
                 },
             });
 
-            new Chart(postCanvas, {
+            postPerformanceChart = new Chart(postCanvas, {
                 type: 'bar',
                 data: {
                     labels: analyticsData.posts,
@@ -1242,7 +1447,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { display: false } },
-                        y: { grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
+                        y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
                     },
                 },
             });
