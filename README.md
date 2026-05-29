@@ -169,42 +169,141 @@ cp .env.example .env.local
 ### Environment Setup
 
 > [!IMPORTANT]
-> The following variables are **strictly required** to run the application:
-> 1. **`MONGODB_URI`**: Required to connect to your database. Without this, the app cannot store user accounts or persistent data.
-> 2. **`JWT_SECRET`**: Required for security. It's used to sign the tokens that keep users logged in.
+> The following variables are required for the application to function correctly:
+>
+> 1. **`MONGODB_URI`** → Required for persistent database storage
+> 2. **`JWT_SECRET`** → Required for authentication and session security
+> 3. **`CLERK_SECRET_KEY`** → Required for Clerk authentication
+> 4. **`DATABASE_URL`** → Required for database connectivity
+>
+> Missing these variables may cause authentication failures, API errors, or application crashes.
 
-```env
-# Auth
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
+Create a `.env.local` file in the project root:
 
-# Database
-DATABASE_URL=
-MONGODB_URI=
+```env id="r9tjlwm"
+# -------------------------------------------------------
+# Clerk Authentication
+# dashboard.clerk.com → API Keys
 
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+
+# -------------------------------------------------------
+# Database Configuration
+
+# Primary SQL database connection string
+# Example providers:
+# - Neon
+# - PostgreSQL
+# - Supabase
+
+DATABASE_URL=your_database_connection_url
+
+# MongoDB Atlas connection string
+# mongodb.com/cloud/atlas
+
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
+
+# -------------------------------------------------------
 # Instagram Graph API
-INSTAGRAM_APP_ID=
-INSTAGRAM_APP_SECRET=
+# developers.facebook.com → My Apps → Instagram Graph API
 
-# AI
-OPENAI_API_KEY=
-OPENROUTER_API_KEY=
+INSTAGRAM_APP_ID=your_instagram_app_id
+INSTAGRAM_APP_SECRET=your_instagram_app_secret
 
-# App
+# -------------------------------------------------------
+# AI Providers
+
+# platform.openai.com → API Keys
+
+OPENAI_API_KEY=sk-...
+
+# openrouter.ai → Keys
+
+OPENROUTER_API_KEY=sk-or-...
+
+# -------------------------------------------------------
+# Application URL
+
+# Base URL where the app is running
+
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# -------------------------------------------------------
+# Email Configuration
+
+# Supported values may include:
+# smtp, gmail, resend, sendgrid, etc.
+
+EMAIL_SERVICE=smtp
+
+# Sender email credentials
+
+EMAIL_USER=your_email_address
+EMAIL_PASSWORD=your_email_password
+
+# Default sender information
+
+EMAIL_FROM="CreatorOS <no-reply@creatoros.com>"
+EMAIL_FROM_NAME=CreatorOS
+
+# Support / reply-to address
+
+EMAIL_REPLY_TO=support@creatoros.com
+
+# SMTP Configuration
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+
+# -------------------------------------------------------
+# JWT Configuration
+
+# Generate with: openssl rand -base64 32
+
+JWT_SECRET=your_jwt_secret
+
+# -------------------------------------------------------
+# Application Configuration
+
+# Backend application URL
+
+APP_URL=http://localhost:3000
+
+# Development server port
+
+PORT=3000
+
+# Environment mode
+# Supported values:
+# development, production, test
+
+NODE_ENV=development
+
+# Enable verbose debugging logs
+
+DEBUG=false
+```
+
+### Copy Environment File
+
+```bash id="z2g5lm"
+cp .env.example .env.local
 ```
 
 ### Run Locally
 
-```bash
-# Create the required local env file, then start the development server
+```bash id="r7w2nk"
 npm run dev
-
-# Open in browser
-open http://localhost:3000
 ```
 
----
+Then open:
+
+```text id="m4p8xc"
+http://localhost:3000
+```
+
 
 ## 📁 Project Structure
 
