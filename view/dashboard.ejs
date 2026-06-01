@@ -222,6 +222,7 @@
             flex-shrink: 0;
             stroke: currentColor;
             fill: none;
+        }
         .nav-link:hover, .service-link:hover {
             transform: translateX(4px);
             color: #67e8f9;
@@ -335,6 +336,7 @@
         .menu-btn {
             width: 2.2rem;
             height: 2.2rem;
+        }
         .menu-btn, .icon-btn {
             width: 2.55rem;
             height: 2.55rem;
@@ -1434,9 +1436,6 @@
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
                     <span class="nav-text">Analytics</span>
                 </a>
-                <a class="nav-link" href="#settings">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
-                    <span class="nav-text">Settings</span>
                 <a class="nav-link" href="/settings">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                         <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
@@ -1449,9 +1448,6 @@
             <!-- Services section -->
             <nav class="sidebar-section" aria-label="Services">
                 <p class="sidebar-label">Services</p>
-                <% services.forEach((service)=> { %>
-                    <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
-                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>
                 <% services.forEach((service) => { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -1981,9 +1977,6 @@
         </main>
     </div>
 
-    <script>
-        // Collapsible sidebar behavior
-        const dashboardLayout = document.getElementById('dashboardLayout');
     <!-- ── QR Modal ──────────────────────────────────────────────────────────── -->
     <div class="qr-modal-wrap" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
         <div class="qr-backdrop" id="qrBackdrop"></div>

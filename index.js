@@ -319,9 +319,11 @@ if (service.key === 'creator-crm') {
 }
 
 if (service.key === 'analytics-dashboard') {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
+    const userDoc = isGuestContributor(req.user)
+        ? null
+        : await User.findById(req.user.id)
+            .select('name email')
+            .lean();
 
     return res.render('analytics-dashboard', {
         service,
