@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>Creator CRM | CreatorOS</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -124,8 +128,10 @@
           </div>
           <form action="/services/creator-crm/invite" method="POST">
             <div class="form-row">
-              <input class="input" type="email" name="email" placeholder="Collaborator email" required />
-              <input class="input" type="text" name="projectName" placeholder="Project or workspace name (optional)" />
+              <label for="crm-email" class="sr-only">Collaborator Email</label>
+              <input id="crm-email" class="input" type="email" name="email" placeholder="Collaborator email" required />
+              <label for="crm-project" class="sr-only">Project Name</label>
+              <input id="crm-project" class="input" type="text" name="projectName" placeholder="Project or workspace name (optional)" />
             </div>
             <div class="form-row">
               <textarea class="textarea" name="message" placeholder="Personal message (optional)"></textarea>

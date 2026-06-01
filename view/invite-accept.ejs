@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>Accept Invitation | CreatorOS</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -50,6 +54,17 @@
       <h1>Welcome aboard</h1>
       <p>You have successfully accepted the collaboration invite for <strong><%= invite.projectName %></strong>. If you already have an account, please log in and continue.</p>
       <a class="button" href="/login">Go to login</a>
+    <% } else if (status === 'pending') { %>
+      <div class="status" style="background: rgba(96, 165, 250, 0.16); color: #bfdbfe;">Invitation pending</div>
+      <h1>Almost there</h1>
+      <p>You have been invited to collaborate on <strong><%= invite.projectName %></strong>.</p>
+      <p>Please copy your invite token below and paste it in your Dashboard to officially accept.</p>
+      
+      <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 0.5rem; border: 1px dashed rgba(255,255,255,0.2); text-align: center; font-family: monospace; font-size: 1.2rem; user-select: all;">
+        <%= invite.token %>
+      </div>
+
+      <a class="button" href="/login">Log in to accept</a>
     <% } else { %>
       <div class="status status-missing">Invitation not found</div>
       <h1>Invite expired or invalid</h1>
