@@ -10,6 +10,22 @@ const urlSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+
+    userId: {
+        type: String,
+        index: true,
+    },
+
+    title: {
+        type: String,
+    },
+
+    tag: {
+        type: String,
+        enum: ["active", "social", "campaign", "general"],
+        default: "active",
+    },
+
     campaignName: {
         type: String,
         default: "Untitled Campaign",
@@ -18,6 +34,13 @@ const urlSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+
+    linkedAt: {
+        type: Date,
+        default: Date.now,
+    },
+
+    createdAt: [
     qrFgColor: {
         type: String,
         default: "#1a1a1a",
@@ -69,6 +92,7 @@ class MockUrlModel {
 
     async save() {
         const existing = mockUrls.find((u) => u.shortId === this.shortId);
+
         if (existing) {
             Object.assign(existing, this);
         } else {

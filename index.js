@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
+const services = require('./services.config');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -28,6 +29,9 @@ const authRoutes = require("./routes/auth");
 const collaborationRoutes = require('./routes/collaboration');
 const analyticsRoutes = require("./routes/analytics");
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
+const { loginLimiter, uploadLimiter, urlShortenerPageLimiter } = require('./middleware/rateLimiters');
+const { wantsHtml } = require('./utils/requestType');
+const { findServiceByKey, buildShortenerViewModel } = require('./utils/viewModels');
 
 connectDB();
 require("./workers/analyticsRefreshWorker");
@@ -39,26 +43,7 @@ app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
 
-const rateLimit = require('express-rate-limit');
-
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
-    message: 'Too many login attempts, please try again later.'
-});
 app.post('/login', loginLimiter);
-
-const uploadLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 10,
-    message: { error: 'Upload limit reached, please try again later.' }
-});
-
-const urlShortenerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 30,
-    message: 'Too many URLs generated, please try again later.'
-});
 
 app.use("/", authRoutes);
 
@@ -69,7 +54,6 @@ const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
 const shortid = require('shortid');
 const multer = require('multer');
-const services = require('./services.config');
 const User = require('./model/user');
 const Invite = require('./model/invite');
 const port = process.env.PORT || 3000;
@@ -105,19 +89,10 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + sanitizedFilename); 
     }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
-
-function findServiceByKey(key) {
-    return services.find((service) => service.key === key);
-}
-
-function buildShortenerViewModel(req, shortId = null, error = null) {
-    return {
-        service: findServiceByKey('url-shortener'),
-        shortUrl: shortId ? `${req.protocol}://${req.get('host')}/u/${shortId}` : null,
-        error,
-    };
-}
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 } 
+});
 
 function buildAccountViewModel(userDoc, fallbackUser) {
     const name = userDoc?.name || fallbackUser?.name || 'Creator';
@@ -262,7 +237,35 @@ app.get("/dashboard", protect, asyncHandler(async (req, res) => {
     });
 }));
 
-app.get("/profile", protect, asyncHandler(async (req, res) => {
+app.get("/my-links", protect, async (req, res) => {
+    const userDoc = isGuestContributor(req.user)
+        ? null
+        : await User.findById(req.user.id).select('name email').lean();
+
+    const host = req.get('host');
+    const domain = host || 'creatoros.link';
+
+    res.render("my-links", {
+        user: buildAccountViewModel(userDoc, req.user),
+        isGuestContributor: isGuestContributor(req.user),
+        domain,
+    });
+});
+
+app.get("/settings", protect, async (req, res) => {
+    const userDoc = isGuestContributor(req.user)
+        ? null
+        : await User.findById(req.user.id)
+            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
+            .lean();
+
+    res.render("settings", {
+        user: buildAccountViewModel(userDoc, req.user),
+        isGuestContributor: isGuestContributor(req.user),
+    });
+});
+
+app.get("/profile", protect, async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id).select('name email').lean();
@@ -331,60 +334,114 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 
 const { isValidUrl } = require('./utils/validators');
 
-app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
+app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerPageLimiter, asyncHandler(async (req, res) => {
     const { redirectUrl } = req.body;
     if (!redirectUrl || !isValidUrl(redirectUrl)) {
         return res.render('home', buildShortenerViewModel(req, null, 'Please enter a valid HTTP or HTTPS URL.'));
     }
 
-    try {
-        const shortId = shortid();
+    const shortId = shortid();
 
         await Url.create({
             shortId,
             redirectUrl,
+            userId: req.user?.id || null,
+            linkedAt: new Date(),
         });
 
-        return res.render('home', buildShortenerViewModel(req, shortId));
-    } catch (err) {
-        console.error('Error creating short URL:', err);
-        return res.render('home', buildShortenerViewModel(req, null, 'An unexpected error occurred.'));
-    }
-});
+    return res.render('home', buildShortenerViewModel(req, shortId));
+}));
 
 app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+        return res.status(400).json({ success: false, message: 'No file uploaded', error: 'No file uploaded' });
     }
     return res.json({
+        success: true,
         filename: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
 });
+// ── Mock Instagram Graph API Endpoint ──────────────────────────────────────
+app.get('/api/instagram/profile', protect, preventContributorWrites, asyncHandler(async (req, res) => {
+    const { username } = req.query;
+    if (!username) {
+        return res.status(400).json({ success: false, error: { message: 'Username is required' } });
+    }
+
+    // Generate dynamic mock data based on the requested username
+    const followersBase = Math.floor(Math.random() * 500000) + 10000;
+    
+    // Generate 90 days of mock chart data to support the date range filter
+    const labels = [];
+    const followers = [];
+    const engagement = [];
+    
+    const now = new Date();
+    for (let i = 89; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        
+        // Simulating some realistic growth/fluctuations
+        const dayFollowers = followersBase - (i * (Math.random() * 500 + 100));
+        followers.push(Math.max(0, Math.floor(dayFollowers)));
+        
+        const dayEngagement = (Math.random() * 4 + 3).toFixed(2); // 3% to 7%
+        engagement.push(parseFloat(dayEngagement));
+    }
+
+    const posts = ['Reel: Morning Routine', 'Carousel: Setup Tour', 'Photo: NYC', 'Reel: Q&A', 'Photo: BTS'];
+    const postPerformance = posts.map(() => Math.floor(Math.random() * 20000) + 1000);
+
+    return res.json({
+        success: true,
+        data: {
+            username: username,
+            name: username.charAt(0).toUpperCase() + username.slice(1),
+            followers: followers[followers.length - 1],
+            following: Math.floor(Math.random() * 1000),
+            totalPosts: Math.floor(Math.random() * 1000),
+            category: 'Digital creator',
+            bio: `Official profile of ${username}. Creating awesome content daily!`,
+            fetchedAt: new Date().toISOString(),
+            profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&size=200&background=random`,
+            charts: {
+                labels,
+                followers,
+                engagement,
+                posts,
+                postPerformance
+            }
+        }
+    });
+}));
 
 // Redirect for generated short URLs
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
 
-    try {
-        const entry = await Url.findOneAndUpdate(
-            { shortId },
-            {
-                $inc:  { totalClicks: 1 },
-                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
-            },
-            { new: true }
-        );
+    const entry = await Url.findOneAndUpdate(
+        { shortId },
+        {
+            $inc:  { totalClicks: 1 },
+            $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+        },
+        { new: true }
+    );
 
-        if (!entry) return res.status(404).send('URL not found');
-
-        return res.redirect(entry.redirectUrl);
-    } catch (err) {
-        console.error('[redirect]', err);
-        return res.status(500).send('Server error');
+    if (!entry) {
+        if (wantsHtml(req)) {
+            return res.status(404).render('error', {
+                error: 'The short URL you are looking for does not exist or has been removed.'
+            });
+        }
+        return res.status(404).json({ success: false, message: 'URL not found', error: 'URL not found' });
     }
+
+    return res.redirect(entry.redirectUrl);
 }));
 
 const errorHandler = require('./middleware/errorHandler');
